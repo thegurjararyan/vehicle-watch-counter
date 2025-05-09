@@ -1,21 +1,23 @@
-
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CustomProgress } from "@/components/ui/custom-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Car, Bike, Bus, Truck, Activity } from "lucide-react";
+import { Car, Bike, Bus, Truck, Activity, AlertCircle } from "lucide-react";
 import { VehicleData } from "@/types/types";
 import VideoPlayer from "./VideoPlayer";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 interface ParkingDashboardProps {
   vehicleData: VehicleData;
   isProcessed: boolean;
   videoFile: File | null;
+  isLiveMode: boolean;
 }
 
-const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashboardProps) => {
+const ParkingDashboard = ({ vehicleData, isProcessed, videoFile, isLiveMode = false }: ParkingDashboardProps) => {
   const [totalSpaces, setTotalSpaces] = useState(0);
   const [totalOccupied, setTotalOccupied] = useState(0);
   const [animatedCounts, setAnimatedCounts] = useState({
@@ -27,6 +29,10 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
 
   // References to track if animations have run
   const animationRunRef = useRef(false);
+
+  // New state for enhanced interactivity
+  const [activeVehicleType, setActiveVehicleType] = useState<string | null>(null);
+  const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
     // Calculate totals
@@ -60,12 +66,24 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
         
         if (step >= steps) {
           clearInterval(timer);
+          // Show alert if parking is getting full
+          if (occupied > total * 0.8) {
+            setShowAlert(true);
+            toast.warning("Parking capacity is reaching its limit!", {
+              duration: 5000,
+            });
+          }
         }
       }, interval);
       
       return () => clearInterval(timer);
     }
   }, [vehicleData, isProcessed]);
+
+  // Handle hover effect for vehicle types
+  const handleVehicleHover = (type: string | null) => {
+    setActiveVehicleType(type);
+  };
 
   // Prepare chart data
   const chartData = [
@@ -105,12 +123,22 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
     }
   ];
 
+  // Historical trend data (simulated)
+  const trendData = [
+    { time: '09:00', cars: 10, bikes: 5, buses: 1, trucks: 2 },
+    { time: '10:00', cars: 15, bikes: 8, buses: 2, trucks: 3 },
+    { time: '11:00', cars: 20, bikes: 12, buses: 2, trucks: 4 },
+    { time: '12:00', cars: 25, bikes: 15, buses: 3, trucks: 5 },
+    { time: '13:00', cars: 22, bikes: 17, buses: 3, trucks: 4 },
+    { time: '14:00', cars: vehicleData.detected.car, bikes: vehicleData.detected.bike, buses: vehicleData.detected.bus, trucks: vehicleData.detected.truck },
+  ];
+
   // Tooltips for charts
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-2 border rounded shadow-sm">
-          <p>{`${payload[0].name}: ${payload[0].value}`}</p>
+        <div className="bg-white dark:bg-slate-800 p-2 border rounded shadow-sm">
+          <p className="font-medium">{`${payload[0].name}: ${payload[0].value}`}</p>
         </div>
       );
     }
@@ -119,11 +147,31 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold">Parking Dashboard</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold">Parking Dashboard</h2>
+        {isLiveMode && (
+          <Badge variant="outline" className="animate-pulse bg-red-50 text-red-500 border-red-200">
+            Live Mode
+          </Badge>
+        )}
+      </div>
+      
+      {showAlert && (
+        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-md animate-fade-in mb-4">
+          <div className="flex">
+            <AlertCircle className="h-5 w-5 text-amber-400" />
+            <div className="ml-3">
+              <p className="text-sm text-amber-700">
+                Parking capacity is reaching its limit! ({totalOccupied}/{totalSpaces} spaces occupied)
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {!isProcessed ? (
         <div className="text-center py-12">
-          <Activity className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <Activity className="mx-auto h-12 w-12 text-gray-400 mb-4 animate-pulse" />
           <h3 className="text-lg font-medium mb-2">No Data Available</h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
             Upload a video using the "Upload Video" tab to analyze parking data and see results here.
@@ -132,23 +180,23 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
+            <Card className="transform transition-all hover:shadow-lg border-blue-100">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">Video Analysis</CardTitle>
               </CardHeader>
               <CardContent>
-                <VideoPlayer videoFile={videoFile} />
+                <VideoPlayer videoFile={videoFile} isLiveMode={isLiveMode} />
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="transform transition-all hover:shadow-lg border-blue-100">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">Parking Capacity</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col items-center justify-center">
-                    <div className="h-[180px] w-[180px]">
+                    <div className="h-[180px] w-[180px] transform transition-all hover:scale-105">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -161,6 +209,8 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                             dataKey="value"
                             label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                             labelLine={false}
+                            animationBegin={0}
+                            animationDuration={1500}
                           >
                             {chartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -170,11 +220,11 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="text-center mt-2">
-                      <div className="text-2xl font-bold">
+                    <div className="text-center mt-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg transform transition-all">
+                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                         {totalOccupied} / {totalSpaces}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-blue-500 dark:text-blue-300">
                         Total Parking Spaces
                       </div>
                     </div>
@@ -204,9 +254,9 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                     <div className="pt-2">
                       <div className="text-sm font-medium mb-1">Real-time Status</div>
                       <div className="flex space-x-1">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
+                        <span className={`px-3 py-2 text-sm rounded-full transition-colors duration-300 ${
                           totalOccupied >= totalSpaces 
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 animate-pulse'
                             : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                         }`}>
                           {totalOccupied >= totalSpaces ? 'FULL' : 'SPACES AVAILABLE'}
@@ -220,14 +270,19 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
           </div>
           
           <Tabs defaultValue="summary" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="summary">Vehicle Summary</TabsTrigger>
               <TabsTrigger value="details">Detailed Analysis</TabsTrigger>
+              <TabsTrigger value="trends">Parking Trends</TabsTrigger>
             </TabsList>
             
             <TabsContent value="summary">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                <Card className="parking-stat bg-white dark:bg-slate-800">
+                <Card 
+                  className={`parking-stat bg-white dark:bg-slate-800 transition-all duration-300 hover:shadow-lg ${activeVehicleType === 'car' ? 'ring-2 ring-red-400 transform scale-105' : ''}`}
+                  onMouseEnter={() => handleVehicleHover('car')}
+                  onMouseLeave={() => handleVehicleHover(null)}
+                >
                   <CardContent className="pt-6">
                     <div className="flex items-start">
                       <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-lg">
@@ -250,7 +305,11 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                   </CardContent>
                 </Card>
                 
-                <Card className="parking-stat bg-white dark:bg-slate-800">
+                <Card 
+                  className={`parking-stat bg-white dark:bg-slate-800 transition-all duration-300 hover:shadow-lg ${activeVehicleType === 'bike' ? 'ring-2 ring-green-400 transform scale-105' : ''}`}
+                  onMouseEnter={() => handleVehicleHover('bike')}
+                  onMouseLeave={() => handleVehicleHover(null)}
+                >
                   <CardContent className="pt-6">
                     <div className="flex items-start">
                       <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
@@ -273,7 +332,11 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                   </CardContent>
                 </Card>
                 
-                <Card className="parking-stat bg-white dark:bg-slate-800">
+                <Card 
+                  className={`parking-stat bg-white dark:bg-slate-800 transition-all duration-300 hover:shadow-lg ${activeVehicleType === 'bus' ? 'ring-2 ring-yellow-400 transform scale-105' : ''}`}
+                  onMouseEnter={() => handleVehicleHover('bus')}
+                  onMouseLeave={() => handleVehicleHover(null)}
+                >
                   <CardContent className="pt-6">
                     <div className="flex items-start">
                       <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg">
@@ -296,7 +359,11 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                   </CardContent>
                 </Card>
                 
-                <Card className="parking-stat bg-white dark:bg-slate-800">
+                <Card 
+                  className={`parking-stat bg-white dark:bg-slate-800 transition-all duration-300 hover:shadow-lg ${activeVehicleType === 'truck' ? 'ring-2 ring-purple-400 transform scale-105' : ''}`}
+                  onMouseEnter={() => handleVehicleHover('truck')}
+                  onMouseLeave={() => handleVehicleHover(null)}
+                >
                   <CardContent className="pt-6">
                     <div className="flex items-start">
                       <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg">
@@ -323,7 +390,7 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
             
             <TabsContent value="details">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                <Card>
+                <Card className="transform transition-all hover:shadow-lg">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Vehicle Distribution</CardTitle>
                   </CardHeader>
@@ -338,6 +405,8 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                             outerRadius={100}
                             paddingAngle={2}
                             dataKey="value"
+                            animationBegin={0}
+                            animationDuration={1500}
                           >
                             {vehicleTypeData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -351,7 +420,7 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="transform transition-all hover:shadow-lg">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Capacity Analysis</CardTitle>
                   </CardHeader>
@@ -444,7 +513,7 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                             return (
                               <span 
                                 key={index} 
-                                className={`px-2 py-1 text-xs rounded-full ${colors[type as keyof typeof colors]}`}
+                                className={`px-2 py-1 text-xs rounded-full ${colors[type as keyof typeof colors]} animate-pulse`}
                               >
                                 {excess} {type}s
                               </span>
@@ -456,6 +525,42 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            <TabsContent value="trends">
+              <Card className="mt-4 transform transition-all hover:shadow-lg">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Hourly Parking Trends</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={trendData}
+                        margin={{
+                          top: 20,
+                          right: 30,
+                          left: 20,
+                          bottom: 5,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="time" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="cars" stackId="a" fill="#ef4444" animationDuration={1500} />
+                        <Bar dataKey="bikes" stackId="a" fill="#22c55e" animationDuration={1500} />
+                        <Bar dataKey="buses" stackId="a" fill="#eab308" animationDuration={1500} />
+                        <Bar dataKey="trucks" stackId="a" fill="#8b5cf6" animationDuration={1500} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="text-center text-sm text-gray-500 mt-4">
+                    Parking usage patterns throughout the day
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </>
