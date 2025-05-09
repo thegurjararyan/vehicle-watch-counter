@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { CustomProgress } from "@/components/ui/custom-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Car, Bike, Bus, Truck, Activity } from "lucide-react";
 import { VehicleData } from "@/types/types";
@@ -366,10 +367,10 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                             {Math.min(vehicleData.detected.car, vehicleData.capacity.car)} / {vehicleData.capacity.car}
                           </span>
                         </div>
-                        <Progress
+                        <CustomProgress
                           value={(Math.min(vehicleData.detected.car, vehicleData.capacity.car) / vehicleData.capacity.car) * 100}
                           className="h-2"
-                          indicatorColor="bg-parking-car"
+                          indicatorClassName="bg-parking-car"
                         />
                       </div>
                       
@@ -383,10 +384,10 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                             {Math.min(vehicleData.detected.bike, vehicleData.capacity.bike)} / {vehicleData.capacity.bike}
                           </span>
                         </div>
-                        <Progress
+                        <CustomProgress
                           value={(Math.min(vehicleData.detected.bike, vehicleData.capacity.bike) / vehicleData.capacity.bike) * 100}
                           className="h-2"
-                          indicatorColor="bg-parking-bike"
+                          indicatorClassName="bg-parking-bike"
                         />
                       </div>
                       
@@ -400,10 +401,10 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                             {Math.min(vehicleData.detected.bus, vehicleData.capacity.bus)} / {vehicleData.capacity.bus}
                           </span>
                         </div>
-                        <Progress
+                        <CustomProgress
                           value={(Math.min(vehicleData.detected.bus, vehicleData.capacity.bus) / vehicleData.capacity.bus) * 100}
                           className="h-2"
-                          indicatorColor="bg-parking-bus"
+                          indicatorClassName="bg-parking-bus"
                         />
                       </div>
                       
@@ -417,10 +418,10 @@ const ParkingDashboard = ({ vehicleData, isProcessed, videoFile }: ParkingDashbo
                             {Math.min(vehicleData.detected.truck, vehicleData.capacity.truck)} / {vehicleData.capacity.truck}
                           </span>
                         </div>
-                        <Progress
+                        <CustomProgress
                           value={(Math.min(vehicleData.detected.truck, vehicleData.capacity.truck) / vehicleData.capacity.truck) * 100}
                           className="h-2"
-                          indicatorColor="bg-parking-truck"
+                          indicatorClassName="bg-parking-truck"
                         />
                       </div>
                       
