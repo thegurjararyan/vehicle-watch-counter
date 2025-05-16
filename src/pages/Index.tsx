@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +7,7 @@ import CapacitySettings from "@/components/CapacitySettings";
 import { VehicleData, initialVehicleData } from "@/types/types";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 const Index = () => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -18,7 +18,6 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   
   useEffect(() => {
-    // Auto-switch to dashboard when processing completes
     if (isProcessed) {
       setActiveTab("dashboard");
     }
@@ -26,15 +25,12 @@ const Index = () => {
   
   const handleUploadVideo = (file: File) => {
     setVideoFile(file);
-    // In a real application, we would start processing the video here
-    // For demo purposes, we'll simulate processing with a timeout
     setIsProcessing(true);
     
     const toastId = toast.loading("Processing video...", {
       duration: 5000,
     });
     
-    // Simulate processing with more realistic timing
     const processingTime = Math.random() * 1000 + 1500;
     
     setTimeout(() => {
@@ -49,16 +45,13 @@ const Index = () => {
   };
 
   const simulateDetection = () => {
-    // Simulate detection results with more realistic data
     const detected = isLiveMode ? 
-      // More dynamic results for live mode
       {
         car: Math.floor(Math.random() * 40) + 20,
         bike: Math.floor(Math.random() * 25) + 15,
         bus: Math.floor(Math.random() * 6) + 2,
         truck: Math.floor(Math.random() * 10) + 3,
       } : 
-      // Standard results for video upload with more variance
       {
         car: Math.floor(Math.random() * 30) + 10,
         bike: Math.floor(Math.random() * 20) + 5,
@@ -88,14 +81,11 @@ const Index = () => {
     setIsLiveMode(isLive);
     
     if (isLive) {
-      // When switching to live mode, reset processing states
       setIsProcessed(false);
       
-      // Auto start processing for live mode
       setTimeout(() => {
         setIsProcessing(true);
         
-        // Simulate processing completion with variable timing for realism
         const liveStartupTime = Math.random() * 1000 + 1500;
         
         setTimeout(() => {
@@ -108,7 +98,6 @@ const Index = () => {
         }, liveStartupTime);
       }, 500);
     } else {
-      // Reset states when switching back from live mode
       setIsProcessing(false);
       setIsProcessed(false);
       setVideoFile(null);
@@ -116,71 +105,120 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
-      <header className="backdrop-blur-md bg-white/80 dark:bg-slate-900/80 sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <header className="backdrop-blur-lg bg-white/80 dark:bg-gray-900/80 border-b border-gray-200/50 dark:border-gray-800/50 sticky top-0 z-50">
         <div className="container py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 dark:from-blue-400 dark:to-blue-300 bg-clip-text text-transparent">
+            <motion.h1 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+            >
               Parking Management System
-            </h1>
-            <div className="flex items-center space-x-2">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-500 ${
-                isLiveMode ? 
-                "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 animate-pulse" : 
-                "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-              }`}>
-                {isLiveMode ? "Live Mode" : "Video Analysis Mode"}
-              </span>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Vehicle Detection & Counting
-              </div>
+            </motion.h1>
+            <div className="flex items-center space-x-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={`px-4 py-2 rounded-full backdrop-blur-sm ${
+                  isLiveMode ? 
+                  "bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400" : 
+                  "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+                }`}
+              >
+                <span className="flex items-center space-x-2">
+                  <span className={`w-2 h-2 rounded-full ${isLiveMode ? "bg-red-500 animate-pulse" : "bg-blue-500"}`} />
+                  <span className="text-sm font-medium">
+                    {isLiveMode ? "Live Mode" : "Video Analysis"}
+                  </span>
+                </span>
+              </motion.div>
             </div>
           </div>
         </div>
       </header>
       
-      <main className="container py-8 animate-fade-in">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid grid-cols-3 max-w-md mx-auto border border-slate-200 dark:border-slate-800 p-1 rounded-full shadow-sm backdrop-blur-sm bg-white/80 dark:bg-slate-900/80">
-            <TabsTrigger value="dashboard" className="rounded-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-500 data-[state=active]:shadow-inner">Dashboard</TabsTrigger>
-            <TabsTrigger value="upload" className="rounded-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-500 data-[state=active]:shadow-inner">Upload Video</TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-500 data-[state=active]:shadow-inner">Settings</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="dashboard" className="space-y-8 tab-content-appear">
-            <Card className="glass-card animate-card">
-              <ParkingDashboard 
-                vehicleData={vehicleData} 
-                isProcessed={isProcessed}
-                videoFile={videoFile}
-                isLiveMode={isLiveMode}
-              />
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="upload" className="tab-content-appear">
-            <Card className="glass-card animate-card">
-              <VideoUploader 
-                onUpload={handleUploadVideo} 
-                isProcessing={isProcessing}
-                onToggleLiveMode={handleToggleLiveMode}
-                isLiveMode={isLiveMode}
-              />
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="settings" className="tab-content-appear">
-            <Card className="glass-card animate-card">
-              <CapacitySettings 
-                capacity={vehicleData.capacity}
-                onChange={handleCapacityChange}
-              />
-            </Card>
-          </TabsContent>
-        </Tabs>
+      <main className="container py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <TabsList className="grid grid-cols-3 max-w-md mx-auto bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm p-1 rounded-full border border-gray-200/50 dark:border-gray-700/50">
+              <TabsTrigger 
+                value="dashboard"
+                className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm rounded-full"
+              >
+                Dashboard
+              </TabsTrigger>
+              <TabsTrigger 
+                value="upload"
+                className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm rounded-full"
+              >
+                Upload Video
+              </TabsTrigger>
+              <TabsTrigger 
+                value="settings"
+                className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm rounded-full"
+              >
+                Settings
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="dashboard">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border-gray-200/50 dark:border-gray-700/50 shadow-xl">
+                  <ParkingDashboard 
+                    vehicleData={vehicleData} 
+                    isProcessed={isProcessed}
+                    videoFile={videoFile}
+                    isLiveMode={isLiveMode}
+                  />
+                </Card>
+              </motion.div>
+            </TabsContent>
+            
+            <TabsContent value="upload">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border-gray-200/50 dark:border-gray-700/50 shadow-xl">
+                  <VideoUploader 
+                    onUpload={handleUploadVideo} 
+                    isProcessing={isProcessing}
+                    onToggleLiveMode={handleToggleLiveMode}
+                    isLiveMode={isLiveMode}
+                  />
+                </Card>
+              </motion.div>
+            </TabsContent>
+            
+            <TabsContent value="settings">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border-gray-200/50 dark:border-gray-700/50 shadow-xl">
+                  <CapacitySettings 
+                    capacity={vehicleData.capacity}
+                    onChange={handleCapacityChange}
+                  />
+                </Card>
+              </motion.div>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
       </main>
       
-      <footer className="border-t border-slate-200 dark:border-slate-800 backdrop-blur-md bg-white/50 dark:bg-slate-900/50">
+      <footer className="border-t border-gray-200/50 dark:border-gray-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg">
         <div className="container py-4">
           <div className="text-center text-sm text-gray-500 dark:text-gray-400">
             Vehicle Detection & Parking Status App © 2025

@@ -1,9 +1,9 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, SkipForward, SkipBack, Video, Camera } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Video, Camera, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface VideoPlayerProps {
   videoFile: File | null;
@@ -252,157 +252,104 @@ const VideoPlayer = ({ videoFile, isLiveMode = false }: VideoPlayerProps) => {
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   return (
-    <div className="space-y-4">
-      <div 
-        className="video-container overflow-hidden rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
+    <div className="relative">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative aspect-video bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl overflow-hidden shadow-2xl"
         onMouseEnter={() => setShowControls(true)}
-        onMouseLeave={() => isPlaying && setShowControls(false)}
+        onMouseLeave={() => setShowControls(false)}
       >
-        {isLiveMode && !videoUrl ? (
-          // Live feed simulation
-          <div className="w-full h-full bg-gradient-to-b from-gray-900 to-gray-700 relative">
-            <video 
-              ref={videoRef}
-              className="w-full h-full opacity-80"
-              autoPlay
-              muted
-              loop
-            >
-              <source src="/placeholder-video.mp4" type="video/mp4" />
-            </video>
-            
-            <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs animate-pulse">
-              LIVE
-            </div>
-            
-            {/* Enhanced bounding boxes with smoother animations */}
-            {boundingBoxes.map((box) => (
-              <div 
-                key={box.id}
-                className="bounding-box transition-all duration-300"
-                style={{
-                  borderColor: box.color,
-                  top: box.y,
-                  left: box.x,
-                  width: box.width,
-                  height: box.height,
-                  opacity: box.opacity,
-                  transform: box.isNew ? "scale(1.05)" : "scale(1)",
-                  boxShadow: box.isNew ? `0 0 8px ${box.color}40` : "none"
-                }}
-              >
-                <div 
-                  className="bounding-box-label transition-opacity"
-                  style={{ backgroundColor: box.color, color: '#fff' }}
-                >
-                  {box.type} {Math.round(box.confidence)}%
-                </div>
-              </div>
-            ))}
-            
-            {/* Entry line for counting vehicles */}
-            <div 
-              className="entry-line"
-              style={{
-                borderColor: '#3b82f6',
-                borderWidth: '2px',
-                top: `${entryLine.y}%`,
-              }}
-            />
-
-            <div className="absolute bottom-4 left-4 text-white text-xs bg-black bg-opacity-50 p-1 rounded">
-              Camera Feed • {new Date().toLocaleTimeString()}
-            </div>
-            
-            {/* New: Detection precision indicator */}
-            <div className="absolute top-2 left-2 bg-blue-500 bg-opacity-80 text-white px-2 py-1 rounded text-xs">
-              Detection Precision: {detectionPrecision}%
-            </div>
-          </div>
-        ) : videoUrl ? (
-          <>
-            <video 
-              ref={videoRef}
-              src={videoUrl}
-              className="w-full h-full"
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-            />
-            
-            {/* Enhanced bounding boxes with smoother animations */}
-            {boundingBoxes.map((box) => (
-              <div 
-                key={box.id}
-                className="bounding-box transition-all duration-300"
-                style={{
-                  borderColor: box.color,
-                  top: box.y,
-                  left: box.x,
-                  width: box.width,
-                  height: box.height,
-                  opacity: box.opacity || 1,
-                  transform: box.isNew ? "scale(1.05)" : "scale(1)",
-                  boxShadow: box.isNew ? `0 0 8px ${box.color}40` : "none"
-                }}
-              >
-                <div 
-                  className="bounding-box-label transition-opacity"
-                  style={{ backgroundColor: box.color, color: '#fff' }}
-                >
-                  {box.type} {Math.round(box.confidence)}%
-                </div>
-              </div>
-            ))}
-            
-            {/* Entry line for counting vehicles */}
-            <div 
-              className="entry-line"
-              style={{
-                borderColor: '#3b82f6',
-                borderWidth: '2px',
-                top: `${entryLine.y}%`,
-              }}
-            />
-            
-            {/* New: Detection precision indicator */}
-            <div className="absolute top-2 left-2 bg-blue-500 bg-opacity-80 text-white px-2 py-1 rounded text-xs">
-              Detection Precision: {detectionPrecision}%
-            </div>
-          </>
+        {videoUrl ? (
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            className="w-full h-full object-cover"
+            onClick={togglePlayPause}
+          />
         ) : (
-          <div className="placeholder flex items-center justify-center text-gray-500 bg-gray-100 dark:bg-gray-800 dark:text-gray-400">
-            <div className="text-center">
-              <p className="mb-2">No video selected</p>
-              <p className="text-sm">Upload a video or enable Live Feed to see detection results</p>
-            </div>
+          <div className="w-full h-full flex items-center justify-center">
+            {isLiveMode ? (
+              <motion.div
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                className="relative"
+              >
+                <Camera className="h-20 w-20 text-blue-500" />
+                {isPlaying && (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0"
+                  >
+                    <Loader2 className="h-20 w-20 text-blue-500/50" />
+                  </motion.div>
+                )}
+              </motion.div>
+            ) : (
+              <Video className="h-20 w-20 text-blue-500" />
+            )}
           </div>
         )}
-      </div>
-      
-      <div className={`transition-opacity duration-300 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
-        {(videoUrl || isLiveMode) && (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2">
+        
+        <AnimatePresence>
+          {boundingBoxes.map((box) => (
+            <motion.div
+              key={box.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: box.opacity, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="absolute border-2"
+              style={{
+                left: box.x,
+                top: box.y,
+                width: box.width,
+                height: box.height,
+                borderColor: box.color,
+                boxShadow: `0 0 8px ${box.color}40`
+              }}
+            >
+              <div 
+                className="absolute -top-6 left-0 px-2 py-1 text-xs font-medium rounded-md"
+                style={{ 
+                  backgroundColor: box.color,
+                  color: '#fff'
+                }}
+              >
+                {box.type} {Math.round(box.confidence)}%
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        
+        <AnimatePresence>
+          {showControls && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4"
+            >
+              <div className="flex items-center space-x-4">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={handleSkipBackward}
-                  disabled={isLiveMode || !videoUrl}
-                  className={isLiveMode ? "opacity-50 cursor-not-allowed" : ""}
+                  disabled={isLiveMode}
+                  className="text-white hover:bg-white/20"
                 >
                   <SkipBack className="h-4 w-4" />
                 </Button>
                 
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={togglePlayPause}
-                  className="hover:bg-blue-50"
+                  className="text-white hover:bg-white/20"
                 >
                   {isPlaying ? (
                     <Pause className="h-4 w-4" />
@@ -412,67 +359,69 @@ const VideoPlayer = ({ videoFile, isLiveMode = false }: VideoPlayerProps) => {
                 </Button>
                 
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
                   onClick={handleSkipForward}
-                  disabled={isLiveMode || !videoUrl}
-                  className={isLiveMode ? "opacity-50 cursor-not-allowed" : ""}
+                  disabled={isLiveMode}
+                  className="text-white hover:bg-white/20"
                 >
                   <SkipForward className="h-4 w-4" />
                 </Button>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                {isLiveMode ? (
-                  <Camera className="h-4 w-4 text-red-500 animate-pulse" />
-                ) : (
-                  <Video className="h-4 w-4 text-blue-500" />
-                )}
-                <span className="text-sm text-gray-500">
-                  {isLiveMode ? "Live Feed" : "Video File"}
-                </span>
-              </div>
-            </div>
-            
-            {!isLiveMode && (
-              <>
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>{formatTime(currentTime)}</span>
-                  <span>{formatTime(duration)}</span>
+                
+                <div className="flex-1 mx-4">
+                  <div className="h-1 bg-white/20 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(currentTime / duration) * 100}%` }}
+                      transition={{ duration: 0.1 }}
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+                    />
+                  </div>
                 </div>
                 
-                <div className="relative w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-full mt-1 cursor-pointer"
-                  onClick={(e) => {
-                    if (!videoRef.current) return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const percent = (e.clientX - rect.left) / rect.width;
-                    videoRef.current.currentTime = percent * videoRef.current.duration;
-                  }}
-                >
-                  <div 
-                    className="absolute h-full bg-blue-500 rounded-full transition-all duration-100"
-                    style={{ width: `${(currentTime / duration) * 100}%` }}
-                  ></div>
+                <div className="text-sm text-white font-medium">
+                  {formatTime(currentTime)} / {formatTime(duration)}
                 </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
       
-      <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-        <p>
-          <span className="font-medium">Note:</span> Enhanced vehicle detection visualization with {detectionPrecision}% precision. In a production application, this would use a real object detection model.
-        </p>
+      <div className="mt-4 space-y-4">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-sm text-gray-500 dark:text-gray-400"
+        >
+          <p>
+            <span className="font-medium">Note:</span> Enhanced vehicle detection visualization with {detectionPrecision}% precision. In a production application, this would use a real object detection model.
+          </p>
+        </motion.div>
         
-        {/* Detection stats with enhanced styling */}
         {isPlaying && (
-          <div className="mt-2 grid grid-cols-4 gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-md text-xs">
-            <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-red-500 mr-1"></span> Cars: {vehicleCounts.car}</div>
-            <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span> Bikes: {vehicleCounts.bike}</div>
-            <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-yellow-500 mr-1"></span> Buses: {vehicleCounts.bus}</div>
-            <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-purple-500 mr-1"></span> Trucks: {vehicleCounts.truck}</div>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-4 gap-4 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg"
+          >
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 rounded-full bg-red-500" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Cars: {vehicleCounts.car}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Bikes: {vehicleCounts.bike}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Buses: {vehicleCounts.bus}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 rounded-full bg-purple-500" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Trucks: {vehicleCounts.truck}</span>
+            </div>
+          </motion.div>
         )}
       </div>
     </div>
